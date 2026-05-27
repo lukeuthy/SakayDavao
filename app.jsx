@@ -1,4 +1,4 @@
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+chponst TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "layout": "B",
   "accent": "forest",
   "simSpeed": 20,
