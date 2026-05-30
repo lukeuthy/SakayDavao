@@ -6,6 +6,7 @@ import { useShowToast } from '../hooks/useToast.js'
 import { estimateAllETAs, formatETA, formatConfidence } from '../utils/eta.js'
 import { isRouteActive, formatOperatingHours } from '../utils/operatingHours.js'
 import { getRouteData, formatStopName } from '../utils/routeHelpers.js'
+import RouteMap from '../components/RouteMap.jsx'
 
 export default function RouteDetail() {
   const { routeNumber, period } = useParams()
@@ -15,11 +16,11 @@ export default function RouteDetail() {
 
   const route = getRouteData(routeGroups, routeNumber, period)
 
+  const [view, setView] = useState('list')
   const [selectedStop, setSelectedStop] = useState(null)
-  const [etas, setEtas] = useState([]) // [{ stopIndex, minutes, confidence, source }]
+  const [etas, setEtas] = useState([])
   const [etaLoading, setEtaLoading] = useState(false)
 
-  // Recalculate ETAs when selected stop changes
   useEffect(() => {
     if (selectedStop === null || !route) return
     setEtaLoading(true)
@@ -28,8 +29,22 @@ export default function RouteDetail() {
       .finally(() => setEtaLoading(false))
   }, [selectedStop, route?.routeNumber, period])
 
+  // List view: toggle select/deselect
   const handleSelectStop = useCallback((idx) => {
     setSelectedStop(prev => prev === idx ? null : idx)
+    setEtas([])
+  }, [])
+
+  // Map view: always select (never toggle off by tapping)
+  const handleMapSelectStop = useCallback((idx) => {
+    setSelectedStop(prev => {
+      if (prev !== idx) setEtas([])
+      return idx
+    })
+  }, [])
+
+  const handleDismiss = useCallback(() => {
+    setSelectedStop(null)
     setEtas([])
   }, [])
 
@@ -66,7 +81,6 @@ export default function RouteDetail() {
 
   return (
     <div className="page">
-      {/* Top bar */}
       <div className="topbar">
         <Link to="/" className="back-btn" aria-label="Back">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -80,107 +94,158 @@ export default function RouteDetail() {
         <span className={`period-badge ${period.toLowerCase()}`}>{period}</span>
       </div>
 
-      <div className="page-content">
-        {/* Operating hours warning */}
-        {!isActive && (
-          <div className="warning-banner">
-            <span>⚠️</span>
-            <span>
-              This route only runs {formatOperatingHours(route.startTime, route.endTime)}.
-              ETAs shown are estimates only.
-            </span>
-          </div>
-        )}
+      {/* View toggle */}
+      <div className="view-tabs">
+        <button
+          className={`view-tab${view === 'list' ? ' active' : ''}`}
+          onClick={() => setView('list')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+          </svg>
+          List
+        </button>
+        <button
+          className={`view-tab${view === 'map' ? ' active' : ''}`}
+          onClick={() => setView('map')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+          </svg>
+          Map
+        </button>
+      </div>
 
-        {/* ETA hero when a stop is selected */}
-        {selectedStop !== null && (
-          <div className="eta-hero">
-            {etaLoading ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
-                <span>Calculating ETA…</span>
-              </div>
-            ) : nextEta ? (
-              <>
-                <div className="eta-hero-label">Next stop ETA from {formatStopName(stops[selectedStop]?.name ?? '')}</div>
-                <div className="eta-hero-time">{formatETA(nextEta)}</div>
-                <div className="eta-hero-sub">
-                  to {formatStopName(stops[selectedStop + 1]?.name ?? '')}
-                  {nextEta.confidence > 0 && ` (${formatConfidence(nextEta)})`}
+      {view === 'list' ? (
+        <div className="page-content">
+          {!isActive && (
+            <div className="warning-banner">
+              <span>⚠️</span>
+              <span>
+                This route only runs {formatOperatingHours(route.startTime, route.endTime)}.
+                ETAs shown are estimates only.
+              </span>
+            </div>
+          )}
+
+          {selectedStop !== null && (
+            <div className="eta-hero">
+              {etaLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                  <span>Calculating ETA…</span>
                 </div>
-                {lastStop && (
-                  <div className="eta-hero-sub" style={{ marginTop: 2 }}>
-                    Final stop: {formatStopName(lastStop.name)} ·{' '}
-                    {etas[etas.length - 1] ? formatETA(etas[etas.length - 1]) : '…'}
+              ) : nextEta ? (
+                <>
+                  <div className="eta-hero-label">Next stop ETA from {formatStopName(stops[selectedStop]?.name ?? '')}</div>
+                  <div className="eta-hero-time">{formatETA(nextEta)}</div>
+                  <div className="eta-hero-sub">
+                    to {formatStopName(stops[selectedStop + 1]?.name ?? '')}
+                    {nextEta.confidence > 0 && ` (${formatConfidence(nextEta)})`}
                   </div>
-                )}
-                <div className="eta-source">
-                  {nextEta.source === 'onnx' ? '🤖 AI model' :
-                   nextEta.source === 'historical' ? `📊 ${contribCount} crowd reports` :
-                   '📐 Route estimate'}
-                </div>
-              </>
-            ) : (
-              <div>Tap a stop below to see ETA</div>
-            )}
-          </div>
-        )}
-
-        {/* Instruction if no stop selected */}
-        {selectedStop === null && (
-          <div style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text-muted)' }}>
-            Tap <strong>"I'm here"</strong> on any stop to calculate ETA.
-            Tap <strong>"Bus here"</strong> to report a bus arrival.
-          </div>
-        )}
-
-        {/* Stop list */}
-        <div className="stop-list">
-          {stops.map((stop, idx) => {
-            const isPast = selectedStop !== null && idx < selectedStop
-            const isCurrent = idx === selectedStop
-            const stopEta = etas.find(e => e.stopIndex === idx)
-            const name = formatStopName(stop.name)
-
-            return (
-              <div key={stop.id ?? idx} className="stop-row">
-                <div className="stop-dot-wrap">
-                  <div className={`stop-dot${isCurrent ? ' current' : isPast ? ' past' : ''}`} />
-                </div>
-                <div className="stop-info">
-                  <span className={`stop-name${isPast ? ' muted' : ''}`}>{name}</span>
-                  <span className="stop-idx">Stop {idx + 1} of {stops.length}</span>
-                  {isCurrent && (
-                    <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600, marginTop: 2 }}>
-                      📍 You are here
-                    </span>
+                  {lastStop && (
+                    <div className="eta-hero-sub" style={{ marginTop: 2 }}>
+                      Final stop: {formatStopName(lastStop.name)} ·{' '}
+                      {etas[etas.length - 1] ? formatETA(etas[etas.length - 1]) : '…'}
+                    </div>
                   )}
-                </div>
-                {stopEta && !isCurrent && (
-                  <span className={`stop-eta${isPast ? ' dim' : ''}`}>
-                    {formatETA(stopEta)}
-                  </span>
-                )}
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button
-                    className={`here-btn${isCurrent ? ' active' : ''}`}
+                  <div className="eta-source">
+                    {nextEta.source === 'onnx' ? '🤖 AI model' :
+                     nextEta.source === 'historical' ? `📊 ${contribCount} crowd reports` :
+                     '📐 Route estimate'}
+                  </div>
+                </>
+              ) : (
+                <div>Tap a stop below to see ETA</div>
+              )}
+            </div>
+          )}
+
+          {selectedStop === null && (
+            <div style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-3)' }}>
+              Tap <strong>"I'm here"</strong> on any stop to calculate ETA.
+              Tap <strong>"Bus here"</strong> to report a bus arrival.
+            </div>
+          )}
+
+          <div className="stop-list">
+            {stops.map((stop, idx) => {
+              const isPast = selectedStop !== null && idx < selectedStop
+              const isCurrent = idx === selectedStop
+              const isTerminal = idx === stops.length - 1
+              const stopEta = etas.find(e => e.stopIndex === idx)
+              const name = formatStopName(stop.name)
+
+              return (
+                <div key={stop.id ?? idx} className={`stop-row${isPast ? ' past' : ''}`}>
+                  <div className="stop-dot-wrap">
+                    <div className={`stop-dot${isCurrent ? ' current' : isPast ? ' past' : isTerminal ? ' terminal' : ''}`} />
+                  </div>
+                  <div
+                    className={`stop-card${isCurrent ? ' current' : isPast ? ' past' : ''}`}
                     onClick={() => handleSelectStop(idx)}
                   >
-                    {isCurrent ? '✓ Here' : "I'm here"}
-                  </button>
-                  <button
-                    className="arrived-btn"
-                    onClick={() => handleArrived(idx, stop.name)}
-                    title="Report bus arrival at this stop"
-                  >
-                    Bus here
-                  </button>
+                    <div className="stop-card-icon">
+                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 700 }}>{idx + 1}</span>
+                    </div>
+                    <div className="stop-card-body">
+                      <div className={`stop-name${isPast ? ' muted' : ''}`}>{name}</div>
+                      <div className="stop-meta">
+                        <span>{stops.length - idx - 1} stop{stops.length - idx - 1 !== 1 ? 's' : ''} left</span>
+                        {stopEta && !isCurrent && (
+                          <>
+                            <span className="stop-meta-dot" />
+                            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{formatETA(stopEta)}</span>
+                          </>
+                        )}
+                        {isCurrent && (
+                          <>
+                            <span className="stop-meta-dot" />
+                            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>You are here</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                      <button
+                        className={`here-btn${isCurrent ? ' active' : ''}`}
+                        onClick={() => handleSelectStop(idx)}
+                      >
+                        {isCurrent ? '✓ Here' : "I'm here"}
+                      </button>
+                      <button
+                        className="arrived-btn"
+                        onClick={() => handleArrived(idx, stop.name)}
+                      >
+                        Bus here
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+          <div style={{ height: 32 }} />
         </div>
-      </div>
+      ) : (
+        <div className="page-content map-view">
+          {!isActive && (
+            <div className="warning-banner" style={{ margin: '8px 12px', borderRadius: 8 }}>
+              <span>⚠️</span>
+              <span>Route only runs {formatOperatingHours(route.startTime, route.endTime)}. ETAs are estimates.</span>
+            </div>
+          )}
+          <RouteMap
+            route={route}
+            selectedStop={selectedStop}
+            etas={etas}
+            etaLoading={etaLoading}
+            onSelectStop={handleMapSelectStop}
+            onDismiss={handleDismiss}
+            onArrived={handleArrived}
+          />
+        </div>
+      )}
     </div>
   )
 }

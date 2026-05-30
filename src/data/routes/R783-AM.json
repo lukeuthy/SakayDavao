@@ -1,0 +1,71 @@
+{
+  "route_number": "R783",
+  "name": "Matina – Panacan",
+  "area": "Metro Cross",
+  "color": "#1A5276",
+  "time_period": "AM",
+  "start_time": "05:00",
+  "end_time": "09:00",
+  "points": [
+    {
+      "name": "Matina Terminal",
+      "lat": 7.0735,
+      "lng": 125.5897,
+      "kind": "stop"
+    },
+    {
+      "name": "NCCC Matina",
+      "lat": 7.078,
+      "lng": 125.5921,
+      "kind": "stop"
+    },
+    {
+      "name": "Maa",
+      "lat": 7.0547,
+      "lng": 125.5842,
+      "kind": "stop"
+    },
+    {
+      "name": "Ecoland",
+      "lat": 7.0618,
+      "lng": 125.5981,
+      "kind": "stop"
+    },
+    {
+      "name": "Bankerohan",
+      "lat": 7.0618,
+      "lng": 125.6028,
+      "kind": "stop"
+    },
+    {
+      "name": "City Hall",
+      "lat": 7.0735,
+      "lng": 125.6124,
+      "kind": "stop"
+    },
+    {
+      "name": "SM City Davao",
+      "lat": 7.0825,
+      "lng": 125.6132,
+      "kind": "stop"
+    },
+    {
+      "name": "Agdao Market",
+      "lat": 7.1003,
+      "lng": 125.6174,
+      "kind": "stop"
+    },
+    {
+      "name": "Panacan Road",
+      "lat": 7.1392,
+      "lng": 125.6456,
+      "kind": "stop"
+    },
+    {
+      "name": "PGSO Panacan",
+      "lat": 7.1556,
+      "lng": 125.6573,
+      "kind": "stop"
+    }
+  ]
+}

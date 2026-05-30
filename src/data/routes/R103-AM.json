@@ -1,0 +1,71 @@
+{
+  "route_number": "R103",
+  "name": "Matina – Agdao",
+  "area": "Inner City Loop",
+  "color": "#2980B9",
+  "time_period": "AM",
+  "start_time": "05:30",
+  "end_time": "08:30",
+  "points": [
+    {
+      "name": "NCCC Matina",
+      "lat": 7.0735,
+      "lng": 125.5897,
+      "kind": "stop"
+    },
+    {
+      "name": "Matina Market",
+      "lat": 7.078,
+      "lng": 125.5921,
+      "kind": "stop"
+    },
+    {
+      "name": "Quimpo Blvd",
+      "lat": 7.0803,
+      "lng": 125.5967,
+      "kind": "stop"
+    },
+    {
+      "name": "CM Recto Ave",
+      "lat": 7.0803,
+      "lng": 125.6052,
+      "kind": "stop"
+    },
+    {
+      "name": "Victoria Plaza",
+      "lat": 7.0803,
+      "lng": 125.6133,
+      "kind": "stop"
+    },
+    {
+      "name": "Roxas Avenue",
+      "lat": 7.0769,
+      "lng": 125.6139,
+      "kind": "stop"
+    },
+    {
+      "name": "Magsaysay Park",
+      "lat": 7.0742,
+      "lng": 125.6161,
+      "kind": "stop"
+    },
+    {
+      "name": "City Hall",
+      "lat": 7.0735,
+      "lng": 125.6124,
+      "kind": "stop"
+    },
+    {
+      "name": "Divisoria",
+      "lat": 7.0869,
+      "lng": 125.6192,
+      "kind": "stop"
+    },
+    {
+      "name": "Agdao Market",
+      "lat": 7.1003,
+      "lng": 125.6174,
+      "kind": "stop"
+    }
+  ]
+}

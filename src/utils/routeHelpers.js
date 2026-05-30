@@ -27,6 +27,7 @@ export function buildRouteGroups(rawFiles) {
       startTime: file.start_time,
       endTime: file.end_time,
       stops,
+      rawPoints: file.points ?? stops,
       durationRange: DURATION_LOOKUP[rn] ?? [30, 60],
     }
     if (period === 'AM') map[rn].am = data

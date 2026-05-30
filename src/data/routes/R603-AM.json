@@ -1,0 +1,59 @@
+{
+  "route_number": "R603",
+  "name": "Mintal – Bankerohan",
+  "area": "Western Express",
+  "color": "#C0392B",
+  "time_period": "AM",
+  "start_time": "06:00",
+  "end_time": "09:00",
+  "points": [
+    {
+      "name": "Mintal Terminal",
+      "lat": 6.9992,
+      "lng": 125.5438,
+      "kind": "stop"
+    },
+    {
+      "name": "Bago Oshiro",
+      "lat": 7.0267,
+      "lng": 125.5535,
+      "kind": "stop"
+    },
+    {
+      "name": "Catalunan Grande",
+      "lat": 7.0416,
+      "lng": 125.5652,
+      "kind": "stop"
+    },
+    {
+      "name": "Maa",
+      "lat": 7.0547,
+      "lng": 125.5842,
+      "kind": "stop"
+    },
+    {
+      "name": "Ecoland Terminal",
+      "lat": 7.0618,
+      "lng": 125.5981,
+      "kind": "stop"
+    },
+    {
+      "name": "Bankerohan",
+      "lat": 7.0618,
+      "lng": 125.6028,
+      "kind": "stop"
+    },
+    {
+      "name": "Rizal Park",
+      "lat": 7.0742,
+      "lng": 125.6087,
+      "kind": "stop"
+    },
+    {
+      "name": "Davao Riverfront",
+      "lat": 7.0656,
+      "lng": 125.6087,
+      "kind": "stop"
+    }
+  ]
+}

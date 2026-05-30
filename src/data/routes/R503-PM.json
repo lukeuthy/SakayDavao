@@ -1,0 +1,71 @@
+{
+  "route_number": "R503",
+  "name": "Bangkal – Agdao",
+  "area": "North Loop",
+  "color": "#16A085",
+  "time_period": "PM",
+  "start_time": "16:30",
+  "end_time": "20:00",
+  "points": [
+    {
+      "name": "Bangkal Terminal",
+      "lat": 7.1042,
+      "lng": 125.5841,
+      "kind": "stop"
+    },
+    {
+      "name": "Ulas Junction",
+      "lat": 7.0902,
+      "lng": 125.5897,
+      "kind": "stop"
+    },
+    {
+      "name": "Matina Market",
+      "lat": 7.078,
+      "lng": 125.5921,
+      "kind": "stop"
+    },
+    {
+      "name": "NCCC Matina",
+      "lat": 7.0735,
+      "lng": 125.5897,
+      "kind": "stop"
+    },
+    {
+      "name": "CM Recto Ave",
+      "lat": 7.0803,
+      "lng": 125.6052,
+      "kind": "stop"
+    },
+    {
+      "name": "Davao Doctors",
+      "lat": 7.0781,
+      "lng": 125.6124,
+      "kind": "stop"
+    },
+    {
+      "name": "Victoria Plaza",
+      "lat": 7.0803,
+      "lng": 125.6133,
+      "kind": "stop"
+    },
+    {
+      "name": "SM City Davao",
+      "lat": 7.0825,
+      "lng": 125.6132,
+      "kind": "stop"
+    },
+    {
+      "name": "Buhangin Road",
+      "lat": 7.1042,
+      "lng": 125.6174,
+      "kind": "stop"
+    },
+    {
+      "name": "Agdao Market",
+      "lat": 7.1003,
+      "lng": 125.6174,
+      "kind": "stop"
+    }
+  ]
+}

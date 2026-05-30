@@ -1,0 +1,71 @@
+{
+  "route_number": "R403",
+  "name": "Calinan – Downtown",
+  "area": "Western Highlands Route",
+  "color": "#8E44AD",
+  "time_period": "PM",
+  "start_time": "15:00",
+  "end_time": "19:30",
+  "points": [
+    {
+      "name": "Calinan Terminal",
+      "lat": 7.1839,
+      "lng": 125.4769,
+      "kind": "stop"
+    },
+    {
+      "name": "Mintal Junction",
+      "lat": 6.9992,
+      "lng": 125.5438,
+      "kind": "stop"
+    },
+    {
+      "name": "Bago Oshiro",
+      "lat": 7.0267,
+      "lng": 125.5535,
+      "kind": "stop"
+    },
+    {
+      "name": "Catalunan Grande",
+      "lat": 7.0416,
+      "lng": 125.5652,
+      "kind": "stop"
+    },
+    {
+      "name": "Catalunan Pequeño",
+      "lat": 7.0547,
+      "lng": 125.5749,
+      "kind": "stop"
+    },
+    {
+      "name": "Matina Aplaya",
+      "lat": 7.0639,
+      "lng": 125.5811,
+      "kind": "stop"
+    },
+    {
+      "name": "Maa",
+      "lat": 7.0547,
+      "lng": 125.5842,
+      "kind": "stop"
+    },
+    {
+      "name": "Ecoland",
+      "lat": 7.0618,
+      "lng": 125.5981,
+      "kind": "stop"
+    },
+    {
+      "name": "Bankerohan",
+      "lat": 7.0618,
+      "lng": 125.6028,
+      "kind": "stop"
+    },
+    {
+      "name": "City Hall",
+      "lat": 7.0735,
+      "lng": 125.6124,
+      "kind": "stop"
+    }
+  ]
+}

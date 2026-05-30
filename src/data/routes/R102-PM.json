@@ -1,0 +1,71 @@
+{
+  "route_number": "R102",
+  "name": "Toril – Agdao",
+  "area": "South–North Corridor",
+  "color": "#27AE60",
+  "time_period": "PM",
+  "start_time": "16:00",
+  "end_time": "20:00",
+  "points": [
+    {
+      "name": "Toril Terminal",
+      "lat": 7.0092,
+      "lng": 125.5714,
+      "kind": "stop"
+    },
+    {
+      "name": "Bago Gallera",
+      "lat": 7.0199,
+      "lng": 125.5788,
+      "kind": "stop"
+    },
+    {
+      "name": "Juna Subdivision",
+      "lat": 7.0339,
+      "lng": 125.5855,
+      "kind": "stop"
+    },
+    {
+      "name": "Talomo Market",
+      "lat": 7.0442,
+      "lng": 125.5901,
+      "kind": "stop"
+    },
+    {
+      "name": "Maa",
+      "lat": 7.0547,
+      "lng": 125.5842,
+      "kind": "stop"
+    },
+    {
+      "name": "Ecoland",
+      "lat": 7.0618,
+      "lng": 125.5981,
+      "kind": "stop"
+    },
+    {
+      "name": "Bankerohan",
+      "lat": 7.0618,
+      "lng": 125.6028,
+      "kind": "stop"
+    },
+    {
+      "name": "City Hall",
+      "lat": 7.0735,
+      "lng": 125.6124,
+      "kind": "stop"
+    },
+    {
+      "name": "SM City Davao",
+      "lat": 7.0825,
+      "lng": 125.6132,
+      "kind": "stop"
+    },
+    {
+      "name": "Agdao Market",
+      "lat": 7.1003,
+      "lng": 125.6174,
+      "kind": "stop"
+    }
+  ]
+}

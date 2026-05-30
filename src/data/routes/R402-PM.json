@@ -1,0 +1,77 @@
+{
+  "route_number": "R402",
+  "name": "Buhangin – Toril",
+  "area": "Cross-City Express",
+  "color": "#E67E22",
+  "time_period": "PM",
+  "start_time": "15:30",
+  "end_time": "19:30",
+  "points": [
+    {
+      "name": "Buhangin Terminal",
+      "lat": 7.1165,
+      "lng": 125.6328,
+      "kind": "stop"
+    },
+    {
+      "name": "NCCC Buhangin",
+      "lat": 7.112,
+      "lng": 125.6285,
+      "kind": "stop"
+    },
+    {
+      "name": "Damosa Gateway",
+      "lat": 7.109,
+      "lng": 125.621,
+      "kind": "stop"
+    },
+    {
+      "name": "SM Lanang",
+      "lat": 7.1042,
+      "lng": 125.6174,
+      "kind": "stop"
+    },
+    {
+      "name": "Sandawa Road",
+      "lat": 7.0902,
+      "lng": 125.6132,
+      "kind": "stop"
+    },
+    {
+      "name": "Mabuhay Road",
+      "lat": 7.0803,
+      "lng": 125.6087,
+      "kind": "stop"
+    },
+    {
+      "name": "Bankerohan",
+      "lat": 7.0618,
+      "lng": 125.6028,
+      "kind": "stop"
+    },
+    {
+      "name": "Ecoland",
+      "lat": 7.0618,
+      "lng": 125.5981,
+      "kind": "stop"
+    },
+    {
+      "name": "Juna Subdivision",
+      "lat": 7.0339,
+      "lng": 125.5855,
+      "kind": "stop"
+    },
+    {
+      "name": "Talomo Market",
+      "lat": 7.0442,
+      "lng": 125.5901,
+      "kind": "stop"
+    },
+    {
+      "name": "Toril Terminal",
+      "lat": 7.0092,
+      "lng": 125.5714,
+      "kind": "stop"
+    }
+  ]
+}

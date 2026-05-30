@@ -1,3 +1,0 @@
-[submodule "src/data/routes"]
-	path = src/data/routes
-	url = https://github.com/ttg-eng/routes
