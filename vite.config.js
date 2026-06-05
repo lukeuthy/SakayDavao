@@ -53,4 +53,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['onnxruntime-web'],
   },
+  server: {
+    allowedHosts: ['shadily-tremor-booting.ngrok-free.dev'],
+  },
 })

@@ -1,5 +1,6 @@
 import { useLocalStorage } from './useLocalStorage.js'
 import { useCallback } from 'react'
+import { uploadContribution } from '../lib/s3.js'
 
 const KEY = 'sakay_contributions'
 
@@ -19,6 +20,7 @@ export function useContributions() {
       minute: new Date().getMinutes(),
     }
     setContributions(prev => [entry, ...prev].slice(0, 500)) // cap at 500
+    uploadContribution(entry) // fire-and-forget sync to S3
     return entry
   }, [setContributions])
 
