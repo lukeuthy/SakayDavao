@@ -5,20 +5,31 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/copyOnnxWasm.js && vite",
+    "dev:host": "node scripts/copyOnnxWasm.js && vite --host",
     "build": "node scripts/copyOnnxWasm.js && node scripts/generateIcons.js && vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "preview:host": "vite preview --host",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
+    "onnxruntime-web": "^1.20.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.27.0",
-    "onnxruntime-web": "^1.20.1"
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.27.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^29.1.1",
     "vite": "^6.0.5",
     "vite-plugin-pwa": "^0.21.1",
+    "vite-plugin-qrcode": "^0.4.1",
+    "vitest": "^4.1.8",
     "workbox-window": "^7.3.0"
   }
 }

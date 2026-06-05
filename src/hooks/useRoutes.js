@@ -29,7 +29,9 @@ const SEED_FILES = [
   R793AM, R793PM,
 ]
 
-const REMOTE_URL = 'https://raw.githubusercontent.com/ttg-eng/routes/main/routes.json'
+// Override with VITE_ROUTES_URL in a .env file to point at a real routes endpoint;
+// falls back to the placeholder (which fails silently → bundled seed data) when unset.
+const REMOTE_URL = import.meta.env.VITE_ROUTES_URL || 'https://raw.githubusercontent.com/ttg-eng/routes/main/routes.json'
 const LS_REMOTE_KEY = 'sakay_remote_routes'
 const LS_UPDATED_KEY = 'sakay_routes_updated'
 
