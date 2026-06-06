@@ -111,3 +111,29 @@ export function SparkIcon({ size = 18 }) {
     </Svg>
   )
 }
+
+export function RouteIcon({ size = 18 }) {
+  return (
+    <Svg size={size}>
+      <circle cx="6" cy="19" r="3" />
+      <circle cx="18" cy="5" r="3" />
+      <path d="M9 19h4a4 4 0 0 0 4-4V9" />
+    </Svg>
+  )
+}
+
+export function SwapIcon({ size = 18 }) {
+  return (
+    <Svg size={size}>
+      <path d="M7 10l-3 3 3 3M4 13h11M17 14l3-3-3-3M20 11H9" />
+    </Svg>
+  )
+}
+
+export function ArrowRightIcon({ size = 18 }) {
+  return (
+    <Svg size={size}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </Svg>
+  )
+}

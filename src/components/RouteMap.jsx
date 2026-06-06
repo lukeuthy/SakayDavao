@@ -37,15 +37,21 @@ function FitBounds({ positions }) {
     if (positions.length >= 2) {
       map.fitBounds(L.latLngBounds(positions), { padding: [48, 48], maxZoom: 15 })
     }
+    // Fit once on mount only; refitting on every position array would fight the user's panning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return null
 }
 
 function PanToStop({ position }) {
   const map = useMap()
+  const lat = position?.[0]
+  const lng = position?.[1]
   useEffect(() => {
     if (position) map.panTo(position, { animate: true, duration: 0.4 })
-  }, [position?.[0], position?.[1]])
+    // Pan only when the selected coordinates change; `map` is stable from useMap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lat, lng])
   return null
 }
 
@@ -55,6 +61,25 @@ function userIcon() {
     iconSize: [18, 18],
     iconAnchor: [9, 9],
     html: `<div style="width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 4px rgba(37,99,235,0.25),0 1px 4px rgba(0,0,0,0.3);"></div>`,
+  })
+}
+
+// Moving bus marker — a small bus glyph in the route color, with a heading
+// pointer rotated toward the direction of travel.
+function busIcon(color, heading) {
+  const deg = typeof heading === 'number' ? heading : 0
+  return L.divIcon({
+    className: '',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    html: `<div style="position:relative;width:28px;height:28px;">
+      <div style="position:absolute;top:-3px;left:50%;transform:translateX(-50%) rotate(${deg}deg);transform-origin:50% 17px;color:${color};">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5"><polygon points="12 3 19 21 12 17 5 21 12 3"/></svg>
+      </div>
+      <div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2.5px solid ${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);color:${color};">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 10h20M8 4v6M16 4v6"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/></svg>
+      </div>
+    </div>`,
   })
 }
 
@@ -82,6 +107,8 @@ export default function RouteMap({
   onLocate,
   locating,
   nearest,
+  buses = [],
+  busSource = 'none',
 }) {
   const stops = route.stops
   const color = route.color || '#16613a'
@@ -191,13 +218,33 @@ export default function RouteMap({
           />
         ))}
 
+        {/* Buses — live feed or schedule simulation */}
+        {buses.map(bus => (
+          <Marker
+            key={bus.id}
+            position={[bus.lat, bus.lng]}
+            icon={busIcon(color, bus.heading)}
+            interactive={false}
+            zIndexOffset={500}
+          />
+        ))}
+
         {userLatLng && <Marker position={userLatLng} icon={userIcon()} />}
       </MapContainer>
+
+      {busSource !== 'none' && (
+        <div className={`map-bus-legend ${busSource}`}>
+          <span className="map-bus-legend-dot" />
+          {busSource === 'live'
+            ? `${buses.length} bus${buses.length !== 1 ? 'es' : ''} live`
+            : `${buses.length} bus${buses.length !== 1 ? 'es' : ''} · simulated`}
+        </div>
+      )}
 
       {/* Map controls — top-right stack: locate + recenter */}
       <div className="map-controls">
         {onLocate && (
-          <button
+          <button type="button"
             className="map-control-btn"
             onClick={onLocate}
             disabled={locating}
@@ -213,7 +260,7 @@ export default function RouteMap({
             )}
           </button>
         )}
-        <button
+        <button type="button"
           className="map-control-btn"
           onClick={fitAll}
           aria-label="Recenter on route"
@@ -256,7 +303,7 @@ export default function RouteMap({
                   {finalEta && ` · ${formatETA(finalEta)} to final stop`}
                 </div>
               </div>
-              <button className="map-sheet-close" onClick={onDismiss} aria-label="Close">
+              <button type="button" className="map-sheet-close" onClick={onDismiss} aria-label="Close">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
@@ -289,7 +336,7 @@ export default function RouteMap({
             ) : null}
 
             <div className="map-sheet-actions">
-              <button
+              <button type="button"
                 className="map-sheet-btn here"
                 onClick={() => onSelectStop(selectedStop)}
               >
@@ -298,7 +345,7 @@ export default function RouteMap({
                 </svg>
                 I'm here
               </button>
-              <button
+              <button type="button"
                 className="map-sheet-btn bus"
                 style={{ background: color, borderColor: color }}
                 onClick={() => onArrived(selectedStop, stops[selectedStop]?.name ?? '')}

@@ -1,14 +1,29 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import Home from './pages/Home.jsx'
-import RoutesPage from './pages/RoutesPage.jsx'
-import FavoritesPage from './pages/FavoritesPage.jsx'
-import RouteDetail from './pages/RouteDetail.jsx'
-import ContributionHistory from './pages/ContributionHistory.jsx'
 import Toast from './components/Toast.jsx'
 import InstallBanner from './components/InstallBanner.jsx'
 import IosInstallGuide from './components/IosInstallGuide.jsx'
+import UpdatePrompt from './components/UpdatePrompt.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { useToast, ToastContext } from './hooks/useToast.js'
+
+// Lazy-load pages so the heavy deps (Leaflet in RouteDetail) split out of the
+// initial bundle and load on demand.
+const Home = lazy(() => import('./pages/Home.jsx'))
+const RoutesPage = lazy(() => import('./pages/RoutesPage.jsx'))
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage.jsx'))
+const RouteDetail = lazy(() => import('./pages/RouteDetail.jsx'))
+const ContributionHistory = lazy(() => import('./pages/ContributionHistory.jsx'))
+const TripPlanner = lazy(() => import('./pages/TripPlanner.jsx'))
+
+function PageFallback() {
+  return (
+    <div className="loading-row" role="status" aria-live="polite">
+      <div className="spinner" />
+      <span>Loading…</span>
+    </div>
+  )
+}
 
 function useOnlineStatus() {
   const [online, setOnline] = useState(navigator.onLine)
@@ -49,6 +64,7 @@ function TopNav() {
       <nav className="top-nav-links">
         <NavLink to="/" end className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Home</NavLink>
         <NavLink to="/routes" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Routes</NavLink>
+        <NavLink to="/plan" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Plan</NavLink>
         <NavLink to="/favorites" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Saved</NavLink>
         <NavLink to="/history" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>History</NavLink>
       </nav>
@@ -80,6 +96,14 @@ function BottomNav() {
           </span>
           <span className="nav-tab-label">Routes</span>
         </NavLink>
+        <NavLink to="/plan" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
+          <span className="nav-tab-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M9 19h4a4 4 0 0 0 4-4V9"/>
+            </svg>
+          </span>
+          <span className="nav-tab-label">Plan</span>
+        </NavLink>
         <NavLink to="/favorites" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
           <span className="nav-tab-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,16 +134,22 @@ export default function App() {
       <div className="app">
         <TopNav />
         {!isOnline && <OfflineBar />}
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/routes" element={<RoutesPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/route/:routeNumber/:period" element={<RouteDetail />} />
-          <Route path="/history" element={<ContributionHistory />} />
-        </Routes>
+        <ErrorBoundary>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/routes" element={<RoutesPage />} />
+              <Route path="/plan" element={<TripPlanner />} />
+              <Route path="/favorites" element={<FavoritesPage />} />
+              <Route path="/route/:routeNumber/:period" element={<RouteDetail />} />
+              <Route path="/history" element={<ContributionHistory />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
         <BottomNav />
         <InstallBanner />
         <IosInstallGuide />
+        <UpdatePrompt />
         <Toast />
       </div>
     </ToastContext.Provider>

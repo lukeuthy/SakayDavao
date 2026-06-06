@@ -1,0 +1,23 @@
+# React Doctor — audits the React codebase (performance, a11y, correctness,
+# bundle size, architecture) on every PR and annotates findings inline.
+# No API key required; runs on local code analysis.
+name: React Doctor
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  statuses: write
+
+jobs:
+  react-doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: millionco/react-doctor@v2

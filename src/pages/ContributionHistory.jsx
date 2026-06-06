@@ -92,7 +92,7 @@ export default function ContributionHistory() {
               </div>
             ))}
 
-            <button className="clear-btn" onClick={handleClear}>
+            <button type="button" className="clear-btn" onClick={handleClear}>
               {confirmClear ? <AlertIcon size={16} /> : <TrashIcon size={16} />}
               {confirmClear ? 'Tap again to confirm' : 'Clear All History'}
             </button>

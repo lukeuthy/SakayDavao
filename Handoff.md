@@ -116,6 +116,84 @@ Goal: cover the two flows that can't be unit-tested — offline service worker a
 - The List/Map `.view-tabs` toggle is `display:none` on desktop (`index.css:1108`) — both columns show at once. Tests must be layout-aware (gate the Map-tab click on `project.name === 'mobile-safari'`).
 - A `test.skip()` inside the body still sets up the `page` fixture first; on WebKit that `newPage` hung. Fix: gate project-specific tests on the cheap `browser` fixture and create the page manually only on the running path (see the offline test).
 
+### Trip planner + live buses + hardening (Session 7 — 2026-06-06)
+Goal: "complete the app" — close the feature gap vs comparable React/Vite transit apps
+(trip planner, live buses) and harden for production. Constraint relaxed by user: an
+*optional* external real-time feed is allowed (still no backend of our own). ONNX model
+deferred, but the synthetic-data spec to train it later is now documented.
+
+| Change | File(s) |
+|---|---|
+| **Trip planner (A→B)** — `buildPlaces` merges same-location stops across routes into shared transfer "places"; `planTrip` finds direct + single-transfer itineraries, scores each leg with `estimateETA`, ranks by transfers then total time. | **NEW** `src/utils/tripPlanner.js`, `src/utils/tripPlanner.test.js` (5 tests) |
+| **Trip planner page** at `/plan` — two autocomplete stop pickers + swap, itinerary cards with badge-colored legs linking to `/route/:rn/:period?stop=`, EmptyState for no-result/initial. 5th nav tab ("Plan") added to top + bottom nav. | **NEW** `src/pages/TripPlanner.jsx`; `src/App.jsx`; `src/index.css` (`.plan-*`, `.itinerary-*`); `src/components/Icons.jsx` (RouteIcon/SwapIcon/ArrowRightIcon) |
+| **Bus simulation** — `cumulativeDistances`/`interpolateAlong` walk the polyline; `simulatedBuses` spawns buses every ~15 min across the service window, interpolated by `elapsed/avgDuration`. Empty outside service hours. | **NEW** `src/utils/busSim.js`, `src/utils/busSim.test.js` (8 tests) |
+| **Optional real-time feed** — `useRealtime` polls `VITE_REALTIME_URL` (JSON adapter) every 25 s when online, caches last good response in localStorage, inert when unset. `useLiveBuses` merges: live feed if present, else simulation; re-ticks 1 s. | **NEW** `src/hooks/useRealtime.js`, `src/hooks/useLiveBuses.js` |
+| **Map buses** — `RouteMap` renders bus markers (route-color glyph + heading pointer) and a "live"/"simulated" legend chip so the source is honest. Wired through `RouteDetail`. | `src/components/RouteMap.jsx`, `src/pages/RouteDetail.jsx`, `src/index.css` (`.map-bus-legend`) |
+| **Real-time runtime cache** — `vite.config.js` now a function using `loadEnv`; adds a NetworkFirst cache for `VITE_REALTIME_URL`'s origin (60 s TTL) when configured. | `vite.config.js` |
+| **Error boundary** — class component wraps `<Routes>`; recoverable "Something went wrong → Reload" fallback instead of a white screen. | **NEW** `src/components/ErrorBoundary.jsx`, `src/App.jsx`, `src/index.css` (`.error-fallback*`) |
+| **SW update prompt** — `registerType` changed `autoUpdate → prompt`; `UpdatePrompt` uses `useRegisterSW` (`virtual:pwa-register/react`) to show a "new version available — Reload/Later" banner. | `vite.config.js`, **NEW** `src/components/UpdatePrompt.jsx`, `src/App.jsx`, `src/index.css` (`.update-prompt*`) |
+| **Code-split** — pages converted to `React.lazy` + `<Suspense>`. Initial JS chunk **865 KB → 183 KB**; Leaflet now isolated in the on-demand RouteDetail chunk (181 KB), planner in its own 6.7 KB chunk. The old chunk-size warning is gone. | `src/App.jsx` |
+| **a11y** — `role="status"`/`aria-live` on the ETA hero + page-loading fallback; aria-labels on new icon-only buttons (planner swap, update dismiss). | `src/pages/RouteDetail.jsx`, `src/pages/TripPlanner.jsx`, `src/components/UpdatePrompt.jsx` |
+| **ETA model synthetic-data spec** — feature contract, `routeEncoded` map, augmentation recipe (peak/day factors, jitter, edge cases), `skl2onnx` export. | **NEW** `docs/eta-model.md` |
+| **Env docs** — `.env.example` documents `VITE_ROUTES_URL` + `VITE_REALTIME_URL`; README expanded (Trip Planner, Live Buses, Env Variables, model-doc link). | **NEW** `.env.example`, `README.md` |
+
+**Build (Session 7):** `npm run build` → exit 0, 130 modules, SW precaches 25 entries; main
+chunk 183 KB (down from 865 KB), no chunk-size warning. New unit tests: tripPlanner (5) +
+busSim (8) pass.
+
+**Tooling added (Session 7b):**
+- **ESLint (flat config, stricter)** — `eslint.config.js` with `@eslint/js` recommended +
+  `eslint-plugin-react` (flat recommended + jsx-runtime) + classic `react-hooks`
+  (rules-of-hooks + exhaustive-deps as **error**) + `react-refresh`. Stricter extras:
+  `no-unused-vars`/`eqeqeq`/`no-var`/`prefer-const` as error, `no-empty` allows empty catch.
+  Deliberately **omits** the react-hooks v7 react-compiler preset (it flags the idiomatic
+  setState-after-async-in-effect pattern used throughout) and `react/no-unescaped-entities`
+  (cosmetic). `react/prop-types` off (plain-JS project). Ignores `prototype/` and root
+  `app.jsx` (orphaned single-file prototypes; real entry is `src/main.jsx`). Scripts:
+  `lint`, `lint:fix`. **`npm run lint` → exit 0, clean.** ESLint pinned to v9 (v10 not yet
+  supported by eslint-plugin-react). A few intentional `exhaustive-deps` disables added with
+  reasons (RouteMap fit/pan, RouteDetail ETA effect).
+- **React Doctor** — `npm run doctor` (`npx react-doctor`) + GitHub Action
+  `.github/workflows/react-doctor.yml` (`millionco/react-doctor@v2`, runs on PRs, no token).
+  `doctor.config.json` scopes analysis to real app source (ignores `prototype/`, `app.jsx`,
+  build output, vendored routes) — without it the score is diluted to 57/100 by dead code.
+  **Score: 71/100 ("Needs work"), 0 errors, 61 warnings** (app source only). Fixed the one
+  error (`role="option"` missing `aria-selected` + `type` in TripPlanner's suggestion
+  button). Remaining 61 warnings are mostly React Doctor's opinionated "you-might-not-need-
+  an-effect" Bugs family (40) — the same class deliberately de-scoped from ESLint — plus
+  a11y (12: keyboard handlers on clickable divs, small text), perf (5), maintainability (4).
+  **Quick-win pass applied** (user-approved, behavior-preserving): added `type="button"`
+  to 25 buttons (codemod), keyboard handler + `role`/`tabIndex`/`aria-label` on clickable
+  stop-cards, dropped incomplete `listbox`/`option` ARIA on planner suggestions (native
+  buttons), bumped 3 sub-12px text sizes to 12px, removed 2 dead exports in
+  `operatingHours.js`. **Score 67→74/100; issues 353→29 (0 errors).** Remaining 29 are
+  intentionally left: 15 effect-pattern "Bugs" (de-scoped, behavior-changing), 7 a11y
+  ("Role used instead of HTML tag" — live-region roles with no native equivalent), 5 micro-
+  perf false-positives, 2 maintainability (large component).
+
+### Docker + iOS Safari fixes (Session 7c — 2026-06-07)
+Goal: containerize for consistent serving, and fix the iOS experience (user reported it
+"wasn't the same at all" on iPhone). **Key point: Docker does NOT fix iOS** — that's
+client-side WebKit rendering. The iOS issues were real CSS/markup compat gaps, fixed
+separately.
+
+| Change | File(s) |
+|---|---|
+| **Docker (prod)** — multi-stage: node:20-alpine builds → nginx:1.27-alpine serves `/dist`. Build ARGs for `VITE_ROUTES_URL`/`VITE_REALTIME_URL`. | **NEW** `Dockerfile` |
+| **nginx config** — HashRouter `try_files`, `no-cache` on `index.html`/`sw.js`/manifest (so PWA updates land), immutable cache for `/assets/`, `application/wasm` MIME, gzip. No COOP/COEP (would break OSM tiles + fonts). | **NEW** `nginx.conf` |
+| **compose + dockerignore** — `docker compose up --build` → `localhost:8080`. | **NEW** `docker-compose.yml`, `.dockerignore` |
+| **iOS: oklch fallbacks + prefixes** — PostCSS pipeline (`@csstools/postcss-oklab-function` preserve + `autoprefixer`) with `.browserslistrc` (iOS/Safari ≥14). Emits `rgb()` base custom-props + `@supports (color: oklab(...))` overrides, so old iOS Safari (<15.4, no oklch) gets working colors instead of a broken palette. Also adds the 5 missing `-webkit-backdrop-filter` prefixes. **This was the main "everything looked wrong on iOS" cause.** | **NEW** `postcss.config.js`, `.browserslistrc`, `package.json` |
+| **iOS: viewport + standalone** — `viewport-fit=cover` (activates the 8 `env(safe-area-inset-*)` rules that were inert), `apple-mobile-web-app-capable`/`-status-bar-style`/`-title`, `mobile-web-app-capable`, theme-color aligned to brand `#16613a`. | `index.html` |
+| **iOS: feel resets + dvh fallbacks** — `-webkit-tap-highlight-color: transparent`, `overscroll-behavior-y: none`, and `100vh` fallbacks before every `100dvh` (autoprefixer doesn't backfill viewport units). | `src/index.css` |
+
+**Verify (Session 7c):** `npm run lint` exit 0; `npm test` 61 pass; `npm run build` exit 0 —
+confirmed emitted CSS has rgb fallbacks + 7 `@supports` oklab blocks + `-webkit-backdrop-
+filter` pairs. `npx playwright test` → **13 passed, 1 skipped** on BOTH desktop-chromium and
+mobile-safari (WebKit — the closest automated proxy to real iOS). Fixed a non-deterministic
+e2e assertion (trip-planner "Direct" depended on AM/PM wall-clock; R102 reverses direction
+PM, so the test now asserts the leg link, not transfer count). **Docker NOT built locally**
+(no docker in the dev env) — run `docker compose up --build` to validate.
+
 ### UI Overhaul (Session 2 — 2026-06-01)
 Applied Elmov/SakayDavao prototype design language from the claude.ai/design handoff bundle:
 
@@ -144,7 +222,7 @@ On screens ≥ 768px:
 
 ## What's Lacking
 
-1. **ONNX model file** — `public/model/eta_model.onnx` does not exist. ETA always uses linear interpolation (`source: 'estimate'`). To enable AI inference, place a trained XGBoost → ONNX model at `public/model/eta_model.onnx`. Input shape `[1, 8]`: `[fromStopIdx, toStopIdx, totalStops, hour, minute, dayOfWeek, routeEncoded, historicalAvg]`.
+1. **ONNX model file** — `public/model/eta_model.onnx` does not exist. ETA always uses linear interpolation (`source: 'estimate'`). To enable AI inference, place a trained XGBoost → ONNX model at `public/model/eta_model.onnx`. Input shape `[1, 8]`: `[fromStopIdx, toStopIdx, totalStops, hour, minute, dayOfWeek, routeEncoded, historicalAvg]`. **Full training + synthetic-data spec now documented in `docs/eta-model.md`** (Session 7). User has real ride data; needs to add the synthetic augmentation described there, then export and drop the file in — no code change.
 
 2. **Remote route data endpoint** — `useRoutes.js` fetches from `https://raw.githubusercontent.com/ttg-eng/routes/main/routes.json` (placeholder, repo doesn't exist). Silent fallback to bundled seed data works. If real remote sync is needed, replace `REMOTE_URL` in `src/hooks/useRoutes.js`.
 

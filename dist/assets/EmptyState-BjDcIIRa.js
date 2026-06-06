@@ -1,0 +1,1 @@
+import{j as e}from"./index-ItaebWIw.js";function c({icon:t,title:i,desc:s,children:m}){return e.jsxs("div",{className:"empty",children:[e.jsx("div",{className:"empty-icon",children:t}),e.jsx("div",{className:"empty-title",children:i}),s&&e.jsx("div",{className:"empty-desc",children:s}),m]})}export{c as E};

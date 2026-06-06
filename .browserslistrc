@@ -1,0 +1,8 @@
+# Compatibility targets for autoprefixer + postcss-oklab-function.
+# Kept broad on purpose so older iOS Safari (the device that "looked wrong")
+# gets oklch fallbacks and -webkit- prefixes.
+> 0.5%
+last 2 versions
+iOS >= 14
+Safari >= 14
+not dead

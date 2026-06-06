@@ -87,7 +87,7 @@ export default function RouteCard({ group, isFavorite, onToggleFavorite, period,
         </div>
 
         <div className="route-card-right">
-          <button
+          <button type="button"
             className={`fav-btn${isFavorite ? ' active' : ''}`}
             onClick={e => { e.stopPropagation(); onToggleFavorite(group.routeNumber) }}
             aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -100,7 +100,7 @@ export default function RouteCard({ group, isFavorite, onToggleFavorite, period,
             <div style={{ fontFamily: "'Geist', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--ink)', letterSpacing: -0.5, lineHeight: 1 }}>
               {to.split(' ')[0]}
             </div>
-            <div style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 500, marginTop: 2 }}>destination</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 500, marginTop: 2 }}>destination</div>
           </div>
         </div>
       </div>
@@ -119,14 +119,14 @@ export default function RouteCard({ group, isFavorite, onToggleFavorite, period,
       <div className="route-actions">
         {group.am && (
           <Link to={`/route/${group.routeNumber}/AM`} style={{ flex: 1 }} onClick={e => e.stopPropagation()}>
-            <button className={`route-action-btn${period === 'AM' ? ' active' : ''}`} style={{ width: '100%' }}>
+            <button type="button" className={`route-action-btn${period === 'AM' ? ' active' : ''}`} style={{ width: '100%' }}>
               AM · {formatOperatingHours(group.am.startTime, group.am.endTime)}
             </button>
           </Link>
         )}
         {group.pm && (
           <Link to={`/route/${group.routeNumber}/PM`} style={{ flex: 1 }} onClick={e => e.stopPropagation()}>
-            <button className={`route-action-btn${period === 'PM' ? ' active' : ''}`} style={{ width: '100%' }}>
+            <button type="button" className={`route-action-btn${period === 'PM' ? ' active' : ''}`} style={{ width: '100%' }}>
               PM · {formatOperatingHours(group.pm.startTime, group.pm.endTime)}
             </button>
           </Link>

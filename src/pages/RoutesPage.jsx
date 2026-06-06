@@ -104,12 +104,12 @@ export default function RoutesPage() {
       <SearchBar value={search} onChange={setSearch} />
 
       <div className="filter-chips">
-        <button className={`filter-chip${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>All</button>
-        <button className={`filter-chip${filter === 'active' ? ' active' : ''}`} onClick={() => setFilter('active')}>
+        <button type="button" className={`filter-chip${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>All</button>
+        <button type="button" className={`filter-chip${filter === 'active' ? ' active' : ''}`} onClick={() => setFilter('active')}>
           <span className="filter-chip-dot" />Active now
         </button>
         {areas.map(area => (
-          <button
+          <button type="button"
             key={area}
             className={`filter-chip${filter === area ? ' active' : ''}`}
             onClick={() => setFilter(area)}

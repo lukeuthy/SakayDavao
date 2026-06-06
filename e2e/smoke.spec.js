@@ -52,6 +52,24 @@ test('app still loads while offline (service worker precache)', async ({ browser
   }
 })
 
+test('trip planner finds a direct route between two stops', async ({ page }) => {
+  await page.goto('/#/plan')
+  // Initial prompt before any selection.
+  await expect(page.getByText('Where to?')).toBeVisible()
+
+  // Toril District Hall → GE Torres is a direct ride on R102.
+  await page.getByLabel('From').fill('Toril District Hall')
+  await page.locator('.plan-suggestion', { hasText: 'Toril District Hall' }).first().click()
+  await page.getByLabel('To').fill('GE Torres')
+  await page.locator('.plan-suggestion', { hasText: 'GE Torres' }).first().click()
+
+  // An itinerary appears with a leg that links into a route detail. (Whether it's
+  // a direct ride or a transfer depends on the active AM/PM period — R102 reverses
+  // direction between them — so we assert the link, not the transfer count.)
+  await expect(page.locator('.itinerary-card').first()).toBeVisible({ timeout: 10_000 })
+  await expect(page.locator('.itinerary-leg').first()).toHaveAttribute('href', /#\/route\//)
+})
+
 test('iOS install guide shows only on iOS', async ({ page }, testInfo) => {
   await page.goto('/')
   const guide = page.getByText('Add to Home Screen')

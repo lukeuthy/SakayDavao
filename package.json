@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "preview:host": "vite preview --host",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "doctor": "npx --yes react-doctor",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
@@ -24,8 +26,16 @@
     "react-router-dom": "^6.27.0"
   },
   "devDependencies": {
+    "@csstools/postcss-oklab-function": "^5.0.4",
+    "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.60.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "vite": "^6.0.5",
     "vite-plugin-pwa": "^0.21.1",

@@ -16,8 +16,8 @@ export function isRouteActive(startTime, endTime) {
 }
 
 // Representative service windows (consistent across all routes in the dataset).
-export const AM_WINDOW = { start: 6 * 60, end: 10 * 60 }   // 06:00–10:00
-export const PM_WINDOW = { start: 16 * 60, end: 21 * 60 }  // 16:00–21:00
+const AM_WINDOW = { start: 6 * 60, end: 10 * 60 }   // 06:00–10:00
+const PM_WINDOW = { start: 16 * 60, end: 21 * 60 }  // 16:00–21:00
 
 export function isAMTime() {
   const now = nowMinutes()

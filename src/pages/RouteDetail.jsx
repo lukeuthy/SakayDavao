@@ -7,6 +7,7 @@ import { estimateAllETAs, formatETA, formatConfidence } from '../utils/eta.js'
 import { isRouteActive, formatOperatingHours } from '../utils/operatingHours.js'
 import { getRouteData, formatStopName, nearestStop, formatDistance } from '../utils/routeHelpers.js'
 import { useGeolocation } from '../hooks/useGeolocation.js'
+import { useLiveBuses } from '../hooks/useLiveBuses.js'
 import RouteMap from '../components/RouteMap.jsx'
 import { AlertIcon, LocationIcon } from '../components/Icons.jsx'
 
@@ -37,6 +38,9 @@ export default function RouteDetail() {
   const [etas, setEtas] = useState([])
   const [etaLoading, setEtaLoading] = useState(false)
 
+  // Live/simulated buses for the map (no-op until route loads).
+  const { buses, source: busSource } = useLiveBuses(route)
+
   // Auto-select a stop when arriving via a search "jump to stop" link (?stop=N).
   useEffect(() => {
     const s = searchParams.get('stop')
@@ -58,6 +62,8 @@ export default function RouteDetail() {
     estimateAllETAs(route, selectedStop, contributions)
       .then(results => setEtas(results))
       .finally(() => setEtaLoading(false))
+    // Recompute on stop/route/period change only — not on every new contribution.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStop, route?.routeNumber, period])
 
   // List view: toggle select/deselect
@@ -151,7 +157,7 @@ export default function RouteDetail() {
 
       {/* View toggle */}
       <div className="view-tabs">
-        <button
+        <button type="button"
           className={`view-tab${view === 'list' ? ' active' : ''}`}
           onClick={() => setView('list')}
         >
@@ -160,7 +166,7 @@ export default function RouteDetail() {
           </svg>
           List
         </button>
-        <button
+        <button type="button"
           className={`view-tab${view === 'map' ? ' active' : ''}`}
           onClick={() => setView('map')}
         >
@@ -186,7 +192,7 @@ export default function RouteDetail() {
             )}
 
             {selectedStop !== null && (
-              <div className="eta-hero">
+              <div className="eta-hero" role="status" aria-live="polite">
                 {etaLoading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div className="spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
@@ -226,7 +232,7 @@ export default function RouteDetail() {
             )}
 
             <div style={{ padding: '4px 16px 0' }}>
-              <button className="locate-btn" onClick={handleLocate} disabled={locating}>
+              <button type="button" className="locate-btn" onClick={handleLocate} disabled={locating}>
                 {locating ? (
                   <>
                     <div className="spinner" style={{ width: 15, height: 15 }} />
@@ -240,7 +246,7 @@ export default function RouteDetail() {
                 )}
               </button>
               {permission === 'denied' && (
-                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 6, paddingLeft: 2 }}>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6, paddingLeft: 2 }}>
                   Location is blocked. Enable it in your browser settings to use this.
                 </div>
               )}
@@ -261,10 +267,16 @@ export default function RouteDetail() {
                     </div>
                     <div
                       className={`stop-card${isCurrent ? ' current' : isPast ? ' past' : ''}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select stop ${idx + 1}, ${name}`}
                       onClick={() => handleSelectStop(idx)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectStop(idx) }
+                      }}
                     >
                       <div className="stop-card-icon">
-                        <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 700 }}>{idx + 1}</span>
+                        <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 12, fontWeight: 700 }}>{idx + 1}</span>
                       </div>
                       <div className="stop-card-body">
                         <div className={`stop-name${isPast ? ' muted' : ''}`}>{name}</div>
@@ -285,13 +297,13 @@ export default function RouteDetail() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                        <button
+                        <button type="button"
                           className={`here-btn${isCurrent ? ' active' : ''}`}
                           onClick={() => handleSelectStop(idx)}
                         >
                           {isCurrent ? '✓ Here' : "I'm here"}
                         </button>
-                        <button
+                        <button type="button"
                           className="arrived-btn"
                           onClick={() => handleArrived(idx, stop.name)}
                         >
@@ -329,6 +341,8 @@ export default function RouteDetail() {
                 onLocate={handleLocate}
                 locating={locating}
                 nearest={nearest}
+                buses={buses}
+                busSource={busSource}
               />
             )}
           </div>

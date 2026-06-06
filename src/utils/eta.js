@@ -87,7 +87,7 @@ function historicalAvg(contributions, routeNumber, fromIdx, toIdx) {
   return stats?.avg ?? null
 }
 
-export function formatETA({ minutes, confidence }) {
+export function formatETA({ minutes }) {
   if (minutes === 0) return 'Arriving'
   return `~${minutes} min`
 }

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "files": [
+      "prototype/**",
+      "app.jsx",
+      "dist/**",
+      "dev-dist/**",
+      "src/data/routes/**",
+      "public/onnx/**"
+    ]
+  }
+}

@@ -18,8 +18,8 @@ export default function InstallBanner() {
         <div className="install-banner-title">Add to Home Screen</div>
         <div className="install-banner-sub">Use offline — no internet needed after install</div>
       </div>
-      <button className="install-banner-btn" onClick={install}>Install</button>
-      <button className="install-banner-close" onClick={dismiss} aria-label="Dismiss">
+      <button type="button" className="install-banner-btn" onClick={install}>Install</button>
+      <button type="button" className="install-banner-close" onClick={dismiss} aria-label="Dismiss">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
           <path d="M18 6L6 18M6 6l12 12"/>
         </svg>

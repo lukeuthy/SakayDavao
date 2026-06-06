@@ -1,0 +1,15 @@
+# One-command run:  docker compose up --build
+# Then open http://localhost:8080
+services:
+  sakaydavao:
+    build:
+      context: .
+      args:
+        # Optional external feeds (baked at build time). Leave empty to run
+        # fully offline on bundled data.
+        VITE_ROUTES_URL: ${VITE_ROUTES_URL:-}
+        VITE_REALTIME_URL: ${VITE_REALTIME_URL:-}
+    image: sakaydavao:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped
