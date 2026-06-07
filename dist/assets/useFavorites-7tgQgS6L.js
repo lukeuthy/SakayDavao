@@ -1,1 +1,0 @@
-import{z as i}from"./Icons-B9yRo1uF.js";import{r as o}from"./index-ItaebWIw.js";const l="sakay_favorites";function v(){const[e,a]=i(l,[]),r=o.useCallback(s=>{a(c=>{const t=new Set(c);return t.has(s)?t.delete(s):t.add(s),Array.from(t)})},[a]),n=o.useCallback(s=>e.includes(s),[e]);return{favorites:e,toggle:r,isFavorite:n}}export{v as u};
