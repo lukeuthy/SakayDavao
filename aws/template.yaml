@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SakayDavao contributions backend: API Gateway (HTTP API) -> Lambda -> S3.
+  Keeps AWS credentials out of the browser bundle.
+
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: '*'
+    Description: >
+      CORS origin allowed to POST contributions. Use '*' for testing,
+      then lock to your deployed site origin (e.g. https://main.xxxx.amplifyapp.com).
+
+Resources:
+  ContributionsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sakaydavao-contributions-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  ContributionsApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods:
+          - POST
+        AllowHeaders:
+          - Content-Type
+        MaxAge: 86400
+
+  ContributionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: contributions/
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Architectures: [arm64]
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          CONTRIBUTIONS_BUCKET: !Ref ContributionsBucket
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub '${ContributionsBucket.Arn}/contributions/*'
+      Events:
+        PostContribution:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ContributionsApi
+            Method: POST
+            Path: /contributions
+
+Outputs:
+  ApiUrl:
+    Description: Set this (plus /contributions) as VITE_CONTRIBUTIONS_API_URL in the frontend.
+    Value: !Sub 'https://${ContributionsApi}.execute-api.${AWS::Region}.amazonaws.com/contributions'
+  BucketName:
+    Description: S3 bucket where contribution JSON files land.
+    Value: !Ref ContributionsBucket
