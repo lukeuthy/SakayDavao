@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { buildRouteGroups } from '../utils/routeHelpers.js'
 
 // Import all local route JSON files as seed data
@@ -82,7 +82,7 @@ export function useRoutes() {
       .finally(() => setSyncLoading(false))
   }, [])
 
-  const routeGroups = buildRouteGroups(rawFiles)
+  const routeGroups = useMemo(() => buildRouteGroups(rawFiles), [rawFiles])
 
   return { routeGroups, rawFiles, lastUpdated, isOnline, syncLoading }
 }
