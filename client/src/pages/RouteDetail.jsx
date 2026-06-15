@@ -8,6 +8,8 @@ import { isRouteActive, formatOperatingHours } from '../utils/operatingHours.js'
 import { getRouteData, formatStopName, nearestStop, formatDistance } from '../utils/routeHelpers.js'
 import { useGeolocation } from '../hooks/useGeolocation.js'
 import { useLiveBuses } from '../hooks/useLiveBuses.js'
+import { useDataConsent } from '../hooks/useDataConsent.js'
+import { useAutoCollect } from '../hooks/useAutoCollect.js'
 import RouteMap from '../components/RouteMap.jsx'
 import { AlertIcon, LocationIcon } from '../components/Icons.jsx'
 
@@ -24,7 +26,8 @@ function useIsDesktop() {
 export default function RouteDetail() {
   const { routeNumber, period } = useParams()
   const { routeGroups } = useRoutes()
-  const { contributions, addContribution, countByRoute } = useContributions()
+  const { contributions, addContribution } = useContributions()
+  const { enabled: sharingEnabled } = useDataConsent()
   const showToast = useShowToast()
 
   const route = getRouteData(routeGroups, routeNumber, period)
@@ -85,10 +88,12 @@ export default function RouteDetail() {
     setEtas([])
   }, [])
 
-  const handleArrived = useCallback((idx, stopName) => {
+  // Automatic, opt-in boarding signal: logged silently while a route is open and the
+  // user is near a stop (see useAutoCollect). No per-stop tapping, no confirmations.
+  const handleBoarding = useCallback((idx, stopName) => {
     addContribution(routeNumber, route?.name ?? routeNumber, idx, stopName)
-    showToast(`Thanks! Bus arrival logged at ${formatStopName(stopName)}`)
-  }, [routeNumber, route, addContribution, showToast])
+  }, [routeNumber, route, addContribution])
+  useAutoCollect(route, sharingEnabled, handleBoarding)
 
   // Locate the user and auto-select the closest stop on this route.
   const handleLocate = useCallback(async () => {
@@ -135,7 +140,6 @@ export default function RouteDetail() {
 
   const isActive = isRouteActive(route.startTime, route.endTime)
   const stops = route.stops
-  const contribCount = countByRoute(routeNumber)
 
   const nextEta = selectedStop !== null && etas.length > 0 ? etas[0] : null
   const lastStop = stops[stops.length - 1]
@@ -213,8 +217,8 @@ export default function RouteDetail() {
                       </div>
                     )}
                     <div className="eta-source">
-                      {nextEta.source === 'onnx' ? 'AI model' :
-                       nextEta.source === 'historical' ? `${contribCount} crowd reports` :
+                      {nextEta.source === 'crowd' ? 'Crowd ETA' :
+                       nextEta.source === 'historical' ? 'Your reports' :
                        'Route estimate'}
                     </div>
                   </>
@@ -226,8 +230,7 @@ export default function RouteDetail() {
 
             {selectedStop === null && (
               <div style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-3)' }}>
-                Tap <strong>"I'm here"</strong> on any stop to calculate ETA.
-                Tap <strong>"Bus here"</strong> to report a bus arrival.
+                Tap <strong>"I'm here"</strong> on any stop to see its ETA.
               </div>
             )}
 
@@ -303,12 +306,6 @@ export default function RouteDetail() {
                         >
                           {isCurrent ? '✓ Here' : "I'm here"}
                         </button>
-                        <button type="button"
-                          className="arrived-btn"
-                          onClick={() => handleArrived(idx, stop.name)}
-                        >
-                          Bus here
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -336,7 +333,6 @@ export default function RouteDetail() {
                 etaLoading={etaLoading}
                 onSelectStop={handleMapSelectStop}
                 onDismiss={handleDismiss}
-                onArrived={handleArrived}
                 userPos={userPos}
                 onLocate={handleLocate}
                 locating={locating}

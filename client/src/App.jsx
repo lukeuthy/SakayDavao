@@ -5,6 +5,7 @@ import InstallBanner from './components/InstallBanner.jsx'
 import IosInstallGuide from './components/IosInstallGuide.jsx'
 import UpdatePrompt from './components/UpdatePrompt.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import ConsentModal from './components/ConsentModal.jsx'
 import { useToast, ToastContext } from './hooks/useToast.js'
 
 // Lazy-load pages so the heavy deps (Leaflet in RouteDetail) split out of the
@@ -13,7 +14,7 @@ const Home = lazy(() => import('./pages/Home.jsx'))
 const RoutesPage = lazy(() => import('./pages/RoutesPage.jsx'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage.jsx'))
 const RouteDetail = lazy(() => import('./pages/RouteDetail.jsx'))
-const ContributionHistory = lazy(() => import('./pages/ContributionHistory.jsx'))
+const Settings = lazy(() => import('./pages/Settings.jsx'))
 const TripPlanner = lazy(() => import('./pages/TripPlanner.jsx'))
 
 function PageFallback() {
@@ -66,7 +67,7 @@ function TopNav() {
         <NavLink to="/routes" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Routes</NavLink>
         <NavLink to="/plan" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Plan</NavLink>
         <NavLink to="/favorites" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Saved</NavLink>
-        <NavLink to="/history" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>History</NavLink>
+        <NavLink to="/settings" className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}>Settings</NavLink>
       </nav>
     </header>
   )
@@ -112,14 +113,14 @@ function BottomNav() {
           </span>
           <span className="nav-tab-label">Saved</span>
         </NavLink>
-        <NavLink to="/history" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
+        <NavLink to="/settings" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
           <span className="nav-tab-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
           </span>
-          <span className="nav-tab-label">History</span>
+          <span className="nav-tab-label">Settings</span>
         </NavLink>
       </nav>
   )
@@ -142,11 +143,12 @@ export default function App() {
               <Route path="/plan" element={<TripPlanner />} />
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/route/:routeNumber/:period" element={<RouteDetail />} />
-              <Route path="/history" element={<ContributionHistory />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
         <BottomNav />
+        <ConsentModal />
         <InstallBanner />
         <IosInstallGuide />
         <UpdatePrompt />

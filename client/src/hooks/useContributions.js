@@ -1,6 +1,7 @@
 import { useLocalStorage } from './useLocalStorage.js'
 import { useCallback } from 'react'
 import { uploadContribution } from '../lib/contributionsApi.js'
+import { isSharingEnabled } from './useDataConsent.js'
 
 const KEY = 'sakay_contributions'
 
@@ -20,7 +21,9 @@ export function useContributions() {
       minute: new Date().getMinutes(),
     }
     setContributions(prev => [entry, ...prev].slice(0, 500)) // cap at 500
-    uploadContribution(entry) // fire-and-forget sync to the contributions API
+    // Only sync to the cloud if the user has opted in (Settings / consent modal).
+    // Local history is always kept on-device regardless.
+    if (isSharingEnabled()) uploadContribution(entry)
     return entry
   }, [setContributions])
 

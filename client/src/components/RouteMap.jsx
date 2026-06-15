@@ -102,7 +102,6 @@ export default function RouteMap({
   etaLoading,
   onSelectStop,
   onDismiss,
-  onArrived,
   userPos,
   onLocate,
   locating,
@@ -329,8 +328,8 @@ export default function RouteMap({
                     to {formatStopName(stops[selectedStop + 1]?.name ?? 'next stop')}
                   </div>
                 </div>
-                <div className={`eta-source-chip ${nextEta.source === 'onnx' ? 'ai' : nextEta.source === 'historical' ? 'crowd' : 'est'}`}>
-                  {nextEta.source === 'onnx' ? 'AI model' : nextEta.source === 'historical' ? 'Crowd' : 'Estimate'}
+                <div className={`eta-source-chip ${nextEta.source === 'crowd' || nextEta.source === 'historical' ? 'crowd' : 'est'}`}>
+                  {nextEta.source === 'crowd' ? 'Crowd' : nextEta.source === 'historical' ? 'Your reports' : 'Estimate'}
                 </div>
               </div>
             ) : null}
@@ -344,17 +343,6 @@ export default function RouteMap({
                   <circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
                 </svg>
                 I'm here
-              </button>
-              <button type="button"
-                className="map-sheet-btn bus"
-                style={{ background: color, borderColor: color }}
-                onClick={() => onArrived(selectedStop, stops[selectedStop]?.name ?? '')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="5" width="20" height="14" rx="2"/>
-                  <path d="M8 19v2M16 19v2M2 10h20M7 5V3M17 5V3"/>
-                </svg>
-                Bus here
               </button>
             </div>
           </>
