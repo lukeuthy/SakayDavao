@@ -68,14 +68,15 @@ describe('suggestedPeriod', () => {
     at('18:00')
     expect(suggestedPeriod()).toBe('PM')
   })
-  it('picks the nearest window in the midday gap (13:00 → PM)', () => {
-    // 13:00 is 3h from AM-close (10:00) and 3h from PM-open (16:00) → ties to PM
+  it('shows the next window (PM) in the midday gap once AM is over', () => {
+    // 13:00: AM window (06–10) has ended; PM (16–21) is next to open → PM
     at('13:00')
-    expect(['AM', 'PM']).toContain(suggestedPeriod())
-  })
-  it('picks PM late at night (closer to evening window across midnight)', () => {
-    at('23:00')
     expect(suggestedPeriod()).toBe('PM')
+  })
+  it('shows AM late at night once PM is over (wraps to next morning)', () => {
+    // 23:00: PM window has ended; the next service to open is tomorrow's AM
+    at('23:00')
+    expect(suggestedPeriod()).toBe('AM')
   })
 })
 

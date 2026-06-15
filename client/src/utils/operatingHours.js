@@ -29,25 +29,19 @@ export function isPMTime() {
   return now >= PM_WINDOW.start && now <= PM_WINDOW.end
 }
 
-// Circular (24h-wrapping) distance, in minutes, from `now` to a window's edges.
-// Returns 0 when inside the window.
-function windowDistance(now, { start, end }) {
-  if (now >= start && now <= end) return 0
-  const DAY = 1440
-  const circ = (a, b) => Math.min((a - b + DAY) % DAY, (b - a + DAY) % DAY)
-  return Math.min(circ(now, start), circ(now, end))
-}
-
 /**
- * Time-aware period: returns whichever bucket ('AM' | 'PM') is closest to the
- * current time — the active one if inside a window, else the nearest upcoming
- * or most-recent one (wraps around midnight).
+ * Time-aware period ('AM' | 'PM'): the active bucket when inside a service
+ * window, otherwise the NEXT bucket to open — so once the AM window is over we
+ * show PM, and once PM is over we show the next day's AM (wraps past midnight).
  */
 export function suggestedPeriod() {
   const now = nowMinutes()
   if (now >= AM_WINDOW.start && now <= AM_WINDOW.end) return 'AM'
   if (now >= PM_WINDOW.start && now <= PM_WINDOW.end) return 'PM'
-  return windowDistance(now, AM_WINDOW) <= windowDistance(now, PM_WINDOW) ? 'AM' : 'PM'
+  const DAY = 1440
+  const untilAM = (AM_WINDOW.start - now + DAY) % DAY
+  const untilPM = (PM_WINDOW.start - now + DAY) % DAY
+  return untilAM <= untilPM ? 'AM' : 'PM'
 }
 
 /** Are we currently inside ANY service window? */

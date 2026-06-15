@@ -124,9 +124,9 @@ export default function RoutesPage() {
           <div className="warning-banner">
             <AlertIcon size={16} />
             <span>
-              Buses aren’t running right now — showing the closest ({period}) schedule.
+              Buses aren’t running right now — showing the next ({period}) schedule.
               {ops.soonest != null && ` Next service in ${formatDuration(ops.soonest)}.`}
-              {' '}ETAs are estimates.
+              {' '}ETA is based on historical data.
             </span>
           </div>
         )}
