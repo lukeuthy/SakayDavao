@@ -8,24 +8,37 @@ const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
-  // Cache the optional real-time vehicle feed (NetworkFirst, short TTL) when configured.
-  const realtimeCaching = []
-  if (env.VITE_REALTIME_URL) {
+  // Build a NetworkFirst SW cache rule for an optional feed origin, when configured.
+  // Both feeds are opt-in; nothing is cached from a hardcoded third-party origin.
+  const feedCaching = (url, cacheName, maxAgeSeconds, maxEntries) => {
+    if (!url) return []
     try {
-      const origin = new URL(env.VITE_REALTIME_URL).origin
-      realtimeCaching.push({
+      const origin = new URL(url).origin
+      return [{
         urlPattern: new RegExp('^' + escapeRegex(origin)),
         handler: 'NetworkFirst',
         options: {
-          cacheName: 'realtime-cache',
-          expiration: { maxEntries: 10, maxAgeSeconds: 60 },
+          cacheName,
+          expiration: { maxEntries, maxAgeSeconds },
           networkTimeoutSeconds: 5,
         },
-      })
+      }]
     } catch {
-      // invalid URL → skip; useRealtime stays in fallback mode
+      return [] // invalid URL → skip; the app stays in its offline fallback
     }
   }
+
+  // Real-time vehicle feed (short TTL) and remote routes feed (1-day TTL).
+  const realtimeCaching = feedCaching(env.VITE_REALTIME_URL, 'realtime-cache', 60, 10)
+  const routesCaching = feedCaching(
+    env.VITE_ROUTES_URL || env.VITE_S3_ROUTES_URL,
+    'routes-api-cache', 24 * 60 * 60, 20,
+  )
+
+  // Optional dev-server tunnel host(s) (e.g. ngrok), comma-separated. Kept out of
+  // source so a personal tunnel URL is never committed. Dev server only.
+  const devAllowedHosts = (env.VITE_DEV_ALLOWED_HOSTS || '')
+    .split(',').map(s => s.trim()).filter(Boolean)
 
   return {
     plugins: [
@@ -50,36 +63,17 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-          globIgnores: ['**/onnx/**', '**/ort-wasm*'],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
           runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/raw\.githubusercontent\.com\/ttg-eng\/routes/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'routes-api-cache',
-                expiration: { maxEntries: 20, maxAgeSeconds: 24 * 60 * 60 },
-                networkTimeoutSeconds: 5,
-              },
-            },
-            {
-              urlPattern: /\.wasm$/,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'wasm-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 7 * 24 * 60 * 60 },
-              },
-            },
+            ...routesCaching,
             ...realtimeCaching,
           ],
         },
       }),
     ],
-    optimizeDeps: {
-      exclude: ['onnxruntime-web'],
-    },
     server: {
-      allowedHosts: ['shadily-tremor-booting.ngrok-free.dev'],
+      // Empty unless VITE_DEV_ALLOWED_HOSTS is set (e.g. an ngrok tunnel host).
+      allowedHosts: devAllowedHosts,
     },
   }
 })

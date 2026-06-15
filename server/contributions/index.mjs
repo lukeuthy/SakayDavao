@@ -33,6 +33,7 @@ export async function handler(event) {
   }
 
   // Re-serialize only known fields so arbitrary client data never reaches the bucket.
+  const receivedAt = Date.now()
   const clean = {
     id: String(id),
     routeNumber: String(routeNumber),
@@ -43,15 +44,28 @@ export async function handler(event) {
     dayOfWeek,
     hour,
     minute,
-    receivedAt: Date.now(),
+    receivedAt,
   }
 
-  await s3.send(new PutObjectCommand({
-    Bucket: BUCKET,
-    Key: `contributions/${clean.routeNumber}/${clean.id}.json`,
-    Body: JSON.stringify(clean),
-    ContentType: 'application/json',
-  }))
+  // Key includes a server timestamp so a client can never overwrite another
+  // record by reusing an id (PutObject is last-writer-wins). Partition by day
+  // for cheap time-range listing. The id/route regexes above already block
+  // path traversal, so these interpolations are safe.
+  const day = new Date(receivedAt).toISOString().slice(0, 10) // YYYY-MM-DD
+  const key = `contributions/${clean.routeNumber}/${day}/${receivedAt}-${clean.id}.json`
+
+  try {
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: JSON.stringify(clean),
+      ContentType: 'application/json',
+    }))
+  } catch (err) {
+    // Don't leak internals to the caller; the detail goes to CloudWatch only.
+    console.error('[contributions] S3 put failed:', err)
+    return respond(500, { error: 'Could not store contribution' })
+  }
 
   return respond(201, { ok: true })
 }

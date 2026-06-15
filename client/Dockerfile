@@ -5,19 +5,27 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Optional build-time config. Vite inlines VITE_* at build time, so these must
-# be present when `npm run build` runs (pass with --build-arg or via compose).
+# be present when the build runs (pass with --build-arg or via compose).
+# NOTE: VITE_CONTRIBUTIONS_API_URL can also be baked here if you serve this image
+# instead of Amplify — add an ARG/ENV pair for it the same way.
 ARG VITE_ROUTES_URL=""
 ARG VITE_REALTIME_URL=""
+ARG VITE_CONTRIBUTIONS_API_URL=""
 ENV VITE_ROUTES_URL=$VITE_ROUTES_URL \
-    VITE_REALTIME_URL=$VITE_REALTIME_URL
+    VITE_REALTIME_URL=$VITE_REALTIME_URL \
+    VITE_CONTRIBUTIONS_API_URL=$VITE_CONTRIBUTIONS_API_URL
 
-# Install deps against the lockfile first (better layer caching).
-COPY package*.json ./
-RUN npm ci
+# This project uses pnpm (pnpm-lock.yaml is the source of truth). Corepack ships
+# with Node 20 and pins the pnpm version from package.json's packageManager field.
+RUN corepack enable
+
+# Install deps against the frozen lockfile first (better layer caching).
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Build (copies ONNX wasm, generates icons, vite build → /app/dist).
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # ---- Runtime stage: serve the static build with nginx ----
 FROM nginx:1.27-alpine AS runtime

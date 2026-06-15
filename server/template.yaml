@@ -1,0 +1,219 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SakayDavao contributions backend: API Gateway (HTTP API) -> Lambda -> S3.
+  Keeps AWS credentials out of the browser bundle.
+
+# ============================================================================
+#  ENVIRONMENT-KEY MAP — where each config value lives. Read this before deploy.
+# ============================================================================
+#  This file (server side) owns:
+#    - AllowedOrigin .............. SAM *parameter*, passed at deploy time
+#                                   (`sam deploy --parameter-overrides AllowedOrigin=...`).
+#    - CONTRIBUTIONS_BUCKET ....... Lambda *runtime* env var, injected by this
+#                                   template (see Function.Environment below).
+#                                   You never set it by hand.
+#
+#  The CLIENT side owns (do NOT put these here — they belong in client/.env or
+#  in the Amplify console, and Vite bakes them into the public bundle):
+#    - VITE_CONTRIBUTIONS_API_URL . = this stack's `ApiUrl` output.
+#    - VITE_ROUTES_URL / VITE_REALTIME_URL ... optional client feeds.
+#
+#  NEVER put AWS access keys anywhere in the client. The Lambda below talks to
+#  S3 with its IAM execution role, so no long-lived credentials exist at all.
+# ============================================================================
+
+Parameters:
+  AllowedOrigin:
+    Type: String
+    # No Default on purpose: deploy must name the exact site origin (fail closed).
+    # CORS is enforced by browsers only — it stops other *websites* calling the API,
+    # not curl/bots. It is paired with throttling (below), which is the real control.
+    AllowedPattern: '^https://[A-Za-z0-9.-]+(:[0-9]+)?$'
+    ConstraintDescription: >
+      Must be a single https:// origin with no trailing slash and no path,
+      e.g. https://main.d1234abcd.amplifyapp.com
+    Description: >
+      The one browser origin allowed to POST contributions. Set it to your
+      deployed site origin (the Amplify URL). For local testing against a dev
+      server use http... — but http is rejected here by design; test with curl,
+      which ignores CORS, or temporarily relax AllowedPattern.
+
+  ContributionRetentionDays:
+    Type: Number
+    Default: 365
+    MinValue: 1
+    Description: Days before raw contribution objects are auto-deleted from S3.
+
+Resources:
+  # ---- Storage: private, encrypted, TLS-only, self-expiring -----------------
+  ContributionsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sakaydavao-contributions-${AWS::AccountId}'
+      # Block every form of public access (defense in depth; the bucket is only
+      # ever written by the Lambda role).
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      # Encrypt at rest (S3 does this by default now, but be explicit).
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      # Raw, unverified contributions are not meant to live forever — expire them.
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireRawContributions
+            Status: Enabled
+            Prefix: contributions/
+            ExpirationInDays: !Ref ContributionRetentionDays
+
+  # Deny any non-TLS (plain HTTP) access to the bucket.
+  ContributionsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ContributionsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt ContributionsBucket.Arn
+              - !Sub '${ContributionsBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+
+  # ---- API: HTTP API with CORS locked + per-stage throttling ----------------
+  ContributionsApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods:
+          - POST            # submit a contribution
+          - GET             # read back the aggregated ETA data
+        AllowHeaders:
+          - Content-Type
+        MaxAge: 86400
+      # Throttle the whole stage. This is the primary abuse / denial-of-wallet
+      # control: it caps how fast anyone (CORS or not) can drive Lambda + S3.
+      # 5 req/s sustained, bursts to 10 — generous for real riders, hostile to bots.
+      DefaultRouteSettings:
+        ThrottlingRateLimit: 5
+        ThrottlingBurstLimit: 10
+
+  # ---- Compute: least-privilege Lambda, concurrency-capped ------------------
+  ContributionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: contributions/
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Architectures: [arm64]
+      MemorySize: 128
+      Timeout: 10
+      # Second safety net under the API throttle: even if something slips past,
+      # at most this many Lambdas run at once, bounding cost and S3 write rate.
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          # Injected by CloudFormation — the handler reads process.env.CONTRIBUTIONS_BUCKET.
+          CONTRIBUTIONS_BUCKET: !Ref ContributionsBucket
+      # Least privilege: write-only, and only under the contributions/ prefix.
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub '${ContributionsBucket.Arn}/contributions/*'
+      Events:
+        PostContribution:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ContributionsApi
+            Method: POST
+            Path: /contributions
+
+  # ---- Rollup: scheduled job that turns raw contributions into one aggregate --
+  # Reads contributions/*, writes aggregates/eta-latest.json. This is the "data
+  # flywheel": everyone's reports feed back into everyone's ETAs. S3 is the only
+  # datastore — no database.
+  AggregateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: aggregate/
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          CONTRIBUTIONS_BUCKET: !Ref ContributionsBucket
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt ContributionsBucket.Arn
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub '${ContributionsBucket.Arn}/contributions/*'
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub '${ContributionsBucket.Arn}/aggregates/*'
+      Events:
+        HourlyRollup:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Description: Roll up contributions into the ETA aggregate.
+
+  # ---- Serve: GET /eta returns the aggregate (bucket stays private) -----------
+  GetEtaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getEta/
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Architectures: [arm64]
+      MemorySize: 128
+      Timeout: 10
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          CONTRIBUTIONS_BUCKET: !Ref ContributionsBucket
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub '${ContributionsBucket.Arn}/aggregates/*'
+      Events:
+        GetEta:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ContributionsApi
+            Method: GET
+            Path: /eta
+
+Outputs:
+  ApiUrl:
+    Description: >
+      Set this as VITE_CONTRIBUTIONS_API_URL in the CLIENT (client/.env locally,
+      or the Amplify console for the hosted site). Vite inlines it at build time.
+    Value: !Sub 'https://${ContributionsApi}.execute-api.${AWS::Region}.amazonaws.com/contributions'
+  EtaUrl:
+    Description: >
+      GET endpoint for the aggregated ETA data. The client derives this from
+      VITE_CONTRIBUTIONS_API_URL automatically (same API base, /eta path), so you
+      do NOT need to set it separately — shown here for reference / curl testing.
+    Value: !Sub 'https://${ContributionsApi}.execute-api.${AWS::Region}.amazonaws.com/eta'
+  BucketName:
+    Description: S3 bucket where contribution + aggregate JSON files land.
+    Value: !Ref ContributionsBucket

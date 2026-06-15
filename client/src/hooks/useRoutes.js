@@ -29,9 +29,11 @@ const SEED_FILES = [
   R793AM, R793PM,
 ]
 
-// Override with VITE_ROUTES_URL in a .env file to point at a real routes endpoint;
-// falls back to the placeholder (which fails silently → bundled seed data) when unset.
-const REMOTE_URL = import.meta.env.VITE_S3_ROUTES_URL || import.meta.env.VITE_ROUTES_URL || 'https://raw.githubusercontent.com/ttg-eng/routes/main/routes.json'
+// Remote routes feed is OPT-IN. Set VITE_ROUTES_URL (or VITE_S3_ROUTES_URL) to a
+// feed you control. When unset we use the bundled seed data only — we deliberately
+// do NOT fall back to any hardcoded third-party URL, so the app never fetches and
+// renders route data from a source no one configured (supply-chain safety).
+const REMOTE_URL = import.meta.env.VITE_S3_ROUTES_URL || import.meta.env.VITE_ROUTES_URL || ''
 const LS_REMOTE_KEY = 'sakay_remote_routes'
 const LS_UPDATED_KEY = 'sakay_routes_updated'
 
@@ -61,7 +63,7 @@ export function useRoutes() {
   }, [])
 
   useEffect(() => {
-    if (!navigator.onLine) return
+    if (!REMOTE_URL || !navigator.onLine) return
     setSyncLoading(true)
     fetch(REMOTE_URL, { signal: AbortSignal.timeout(8000) })
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })

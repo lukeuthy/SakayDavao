@@ -3,13 +3,14 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.5.0",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "dev": "node scripts/copyOnnxWasm.js && vite",
-    "dev:host": "node scripts/copyOnnxWasm.js && vite --host",
-    "build": "node scripts/copyOnnxWasm.js && node scripts/generateIcons.js && vite build",
+    "dev": "vite",
+    "dev:host": "vite --host",
+    "build": "node scripts/generateIcons.js && vite build",
     "preview": "vite preview",
     "preview:host": "vite preview --host",
     "lint": "eslint .",
@@ -21,7 +22,6 @@
   },
   "dependencies": {
     "leaflet": "^1.9.4",
-    "onnxruntime-web": "^1.20.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",

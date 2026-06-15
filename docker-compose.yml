@@ -1,9 +1,13 @@
 # One-command run:  docker compose up --build
 # Then open http://localhost:8080
+#
+# This builds ONLY the client (the static PWA). The server (server/) is the AWS
+# SAM backend and is deployed separately with `sam deploy` — it is not part of
+# this image. Build context is ./client so the Dockerfile there sees its files.
 services:
   sakaydavao:
     build:
-      context: .
+      context: ./client
       args:
         # Optional external feeds (baked at build time). Leave empty to run
         # fully offline on bundled data.
