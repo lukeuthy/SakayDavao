@@ -1,10 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
-// Force the deterministic linear-interpolation ETA path (no ONNX in tests).
-vi.mock('../model/inference.js', () => ({
-  runOnnxInference: vi.fn().mockResolvedValue(null),
-  isModelLoaded: () => false,
-}))
+// No VITE_CONTRIBUTIONS_API_URL in tests → the crowd-aggregate ETA tier
+// short-circuits, so estimateETA deterministically uses linear interpolation.
 
 import { buildPlaces, planTrip } from './tripPlanner.js'
 
@@ -40,22 +37,35 @@ const routeGroups = [
   },
 ]
 
-const placeNamed = (name) => buildPlaces(routeGroups, 'AM').places.find(p => p.name === name)
+const placeNamed = (name) => buildPlaces(routeGroups).places.find(p => p.name === name)
 
 describe('buildPlaces', () => {
   it('merges identical stops across routes into one transfer place', () => {
-    const { places } = buildPlaces(routeGroups, 'AM')
+    const { places } = buildPlaces(routeGroups)
     const gamma = places.find(p => p.name === 'Gamma')
     const routes = new Set(gamma.members.map(m => m.routeNumber))
     expect(routes).toEqual(new Set(['RA', 'RB']))
     // 7 raw stops, Gamma shared → 6 distinct places
     expect(places).toHaveLength(6)
   })
+
+  it('includes stops from both directions (AM + PM) of a route', () => {
+    const groups = [{
+      routeNumber: 'RC', name: 'Route C', color: '#333',
+      am: periodData('RC', 'Route C', '#333', [mk('North', 7.1, 125.1), mk('South', 7.2, 125.2)]),
+      pm: { ...periodData('RC', 'Route C', '#333', [mk('South', 7.2, 125.2), mk('North', 7.1, 125.1)]), period: 'PM' },
+    }]
+    const { places } = buildPlaces(groups)
+    // Two physical stops, each appears in both directions → 2 distinct places.
+    expect(places).toHaveLength(2)
+    const north = places.find(p => p.name === 'North')
+    expect(new Set(north.members.map(m => m.period))).toEqual(new Set(['AM', 'PM']))
+  })
 })
 
 describe('planTrip', () => {
   it('finds a direct ride on a single route', async () => {
-    const res = await planTrip(routeGroups, placeNamed('Alpha'), placeNamed('Delta'), 'AM', [])
+    const res = await planTrip(routeGroups, placeNamed('Alpha'), placeNamed('Delta'), [])
     expect(res.length).toBeGreaterThanOrEqual(1)
     expect(res[0].transfers).toBe(0)
     expect(res[0].legs).toHaveLength(1)
@@ -63,7 +73,7 @@ describe('planTrip', () => {
   })
 
   it('finds a one-transfer trip across two routes', async () => {
-    const res = await planTrip(routeGroups, placeNamed('Alpha'), placeNamed('Zeta'), 'AM', [])
+    const res = await planTrip(routeGroups, placeNamed('Alpha'), placeNamed('Zeta'), [])
     expect(res.length).toBeGreaterThanOrEqual(1)
     const trip = res[0]
     expect(trip.transfers).toBe(1)
@@ -73,13 +83,31 @@ describe('planTrip', () => {
     expect(trip.legs[1].fromName).toBe('Gamma')
   })
 
-  it('returns no itineraries when the destination is behind the origin', async () => {
-    const res = await planTrip(routeGroups, placeNamed('Delta'), placeNamed('Alpha'), 'AM', [])
-    expect(res).toEqual([])
+  it('uses the return direction (PM) when the AM direction does not connect', async () => {
+    // AM: Out goes P→Q→Hub; Back goes Hub→R (only as RB-AM). To get Q→R you ride
+    // Out AM (Q→Hub) then RB (Hub→R). Now reverse: R→Q needs RB? Build a case where
+    // only the PM direction of "Out" carries Hub→P, proving both directions are used.
+    const groups = [
+      {
+        routeNumber: 'OUT', name: 'Out', color: '#a',
+        am: periodData('OUT', 'Out', '#a', [mk('P', 7.0, 125.0), mk('Q', 7.0, 125.1), mk('Hub', 7.0, 125.2)]),
+        pm: { ...periodData('OUT', 'Out', '#a', [mk('Hub', 7.0, 125.2), mk('Q', 7.0, 125.1), mk('P', 7.0, 125.0)]), period: 'PM' },
+      },
+      {
+        routeNumber: 'CONN', name: 'Conn', color: '#b',
+        am: periodData('CONN', 'Conn', '#b', [mk('R', 7.1, 125.2), mk('Hub', 7.0, 125.2)]),
+        pm: { ...periodData('CONN', 'Conn', '#b', [mk('Hub', 7.0, 125.2), mk('R', 7.1, 125.2)]), period: 'PM' },
+      },
+    ]
+    const place = (n) => buildPlaces(groups).places.find(p => p.name === n)
+    // R → P: requires CONN (R→Hub) then OUT in the PM direction (Hub→P).
+    const res = await planTrip(groups, place('R'), place('P'), [])
+    expect(res.length).toBeGreaterThanOrEqual(1)
+    expect(res[0].legs[res[0].legs.length - 1].routeNumber).toBe('OUT')
   })
 
   it('returns nothing when origin and destination are the same place', async () => {
-    const res = await planTrip(routeGroups, placeNamed('Alpha'), placeNamed('Alpha'), 'AM', [])
+    const res = await planTrip(routeGroups, placeNamed('Alpha'), placeNamed('Alpha'), [])
     expect(res).toEqual([])
   })
 })

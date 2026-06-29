@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useRoutes } from '../hooks/useRoutes.js'
 import { useContributions } from '../hooks/useContributions.js'
 import { buildPlaces, planTrip } from '../utils/tripPlanner.js'
-import { suggestedPeriod, periodWindowLabel } from '../utils/operatingHours.js'
 import EmptyState from '../components/EmptyState.jsx'
 import { RouteIcon, SwapIcon, ArrowRightIcon, ClockIcon, BusIcon, PinIcon } from '../components/Icons.jsx'
 
@@ -72,7 +71,7 @@ function ItineraryCard({ itinerary }) {
       <div className="itinerary-summary">
         <span className="itinerary-total"><ClockIcon size={14} /> ~{totalMinutes} min</span>
         <span className="itinerary-transfers">
-          {transfers === 0 ? 'Direct' : `${transfers} transfer`}
+          {transfers === 0 ? 'Direct' : `${transfers} transfer${transfers > 1 ? 's' : ''}`}
         </span>
       </div>
       <div className="itinerary-legs">
@@ -110,9 +109,8 @@ function ItineraryCard({ itinerary }) {
 export default function TripPlanner() {
   const { routeGroups } = useRoutes()
   const { contributions } = useContributions()
-  const period = suggestedPeriod()
 
-  const { places } = useMemo(() => buildPlaces(routeGroups, period), [routeGroups, period])
+  const { places } = useMemo(() => buildPlaces(routeGroups), [routeGroups])
 
   const [origin, setOrigin] = useState(null)
   const [dest, setDest] = useState(null)
@@ -123,11 +121,11 @@ export default function TripPlanner() {
     if (!origin || !dest) { setResults(null); return }
     let cancelled = false
     setLoading(true)
-    planTrip(routeGroups, origin, dest, period, contributions)
+    planTrip(routeGroups, origin, dest, contributions)
       .then(r => { if (!cancelled) setResults(r) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [origin, dest, routeGroups, period, contributions])
+  }, [origin, dest, routeGroups, contributions])
 
   const swap = () => { setOrigin(dest); setDest(origin) }
 
@@ -137,7 +135,7 @@ export default function TripPlanner() {
         <div className="page-header-inner">
           <div className="page-title">Plan a trip</div>
           <div className="page-subtitle">
-            {period} schedule · {periodWindowLabel(period)}
+            Across all DC Bus routes · both directions
           </div>
         </div>
       </div>
