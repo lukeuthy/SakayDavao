@@ -116,13 +116,15 @@ Resources:
     Properties:
       CodeUri: contributions/
       Handler: index.handler
-      Runtime: nodejs20.x
+      Runtime: nodejs24.x
       Architectures: [arm64]
       MemorySize: 128
       Timeout: 10
-      # Second safety net under the API throttle: even if something slips past,
-      # at most this many Lambdas run at once, bounding cost and S3 write rate.
-      ReservedConcurrentExecutions: 10
+      # NOTE: ReservedConcurrentExecutions intentionally omitted. Brand-new AWS
+      # accounts have a total Lambda concurrency limit of only 10, and reserving
+      # any of it pushes "unreserved" below the required minimum of 10, which
+      # fails the deploy. Once the account limit is raised (Service Quotas), you
+      # can add `ReservedConcurrentExecutions: 10` back as a cost/abuse guard.
       Environment:
         Variables:
           # Injected by CloudFormation — the handler reads process.env.CONTRIBUTIONS_BUCKET.
@@ -150,7 +152,7 @@ Resources:
     Properties:
       CodeUri: aggregate/
       Handler: index.handler
-      Runtime: nodejs20.x
+      Runtime: nodejs24.x
       Architectures: [arm64]
       MemorySize: 256
       Timeout: 60
@@ -181,11 +183,12 @@ Resources:
     Properties:
       CodeUri: getEta/
       Handler: index.handler
-      Runtime: nodejs20.x
+      Runtime: nodejs24.x
       Architectures: [arm64]
       MemorySize: 128
       Timeout: 10
-      ReservedConcurrentExecutions: 10
+      # ReservedConcurrentExecutions omitted — see the note on ContributionsFunction
+      # (a new account's concurrency limit of 10 forbids reserving any of it).
       Environment:
         Variables:
           CONTRIBUTIONS_BUCKET: !Ref ContributionsBucket

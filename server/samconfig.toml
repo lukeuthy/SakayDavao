@@ -1,0 +1,15 @@
+version = 0.1
+
+# Pre-filled deploy config so you can run a plain `sam deploy` (no --guided Q&A).
+# AllowedOrigin starts as a placeholder; after the client is live on Amplify,
+# re-run with the real URL:
+#   sam deploy --parameter-overrides AllowedOrigin=https://main.xxxx.amplifyapp.com
+
+[default.deploy.parameters]
+stack_name = "sakaydavao-contributions"
+region = "ap-southeast-1"
+resolve_s3 = true
+s3_prefix = "sakaydavao-contributions"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+parameter_overrides = "AllowedOrigin=\"https://placeholder.amplifyapp.com\""

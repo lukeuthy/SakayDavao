@@ -1,0 +1,28 @@
+version: 1
+# Amplify Hosting build spec for the SakayDavao monorepo.
+# The PWA lives in client/ (appRoot). Two repo-specific needs are handled here:
+#   1. Route data is a git SUBMODULE (client/src/data/routes -> ttg-eng/routes),
+#      so we must init it or the build has no routes. It's a public HTTPS repo,
+#      so no credentials are needed.
+#   2. The project uses pnpm (pinned via package.json "packageManager"); we
+#      enable it through corepack.
+applications:
+  - appRoot: client
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - git submodule update --init --recursive
+            - corepack enable
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        # Relative to appRoot (client/), so this is client/dist.
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
